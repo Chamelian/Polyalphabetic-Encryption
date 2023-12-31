@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include <time.h>
 
 const int SIZE_OF_ALPHABET = 96;
 const int ALPHABET_COUNT = 5;
@@ -16,7 +15,7 @@ const char alphabet[] = {
 // I use '\000' instead of NULL since the compiler complains even though I think it's fine
 
 
-char* _genRandomAlphabet(char alphabet[SIZE_OF_ALPHABET], char returnAlphabet[SIZE_OF_ALPHABET]) {
+char* _genRandomAlphabet(const char alphabet[], char returnAlphabet[]) {
     char tempAlphabet[SIZE_OF_ALPHABET];
     int currentAlphabetSize = SIZE_OF_ALPHABET;
 
@@ -71,8 +70,8 @@ FILE* __initFile(char filePath[], char* mode) {
 void _fileEncoder(
     char readFilePath[],
     char writeFilePath[],
-    char alphabet[SIZE_OF_ALPHABET],
-    char lemon[ALPHABET_COUNT][SIZE_OF_ALPHABET],
+    const char alphabet[],
+    char lemon[][SIZE_OF_ALPHABET],
     char alphabetOrderKey[]
 ) {
     FILE* fileToEncode = __initFile(readFilePath, "r");
@@ -110,8 +109,8 @@ void _fileEncoder(
 void _fileDecoder(
     char readFilePath[],
     char writeFilePath[],
-    char alphabet[SIZE_OF_ALPHABET],
-    char lemon[ALPHABET_COUNT][SIZE_OF_ALPHABET],
+    const char alphabet[],
+    char lemon[][SIZE_OF_ALPHABET],
     char alphabetOrderKey[]
 ) {
     FILE* fileToDecode = __initFile(readFilePath, "r");
