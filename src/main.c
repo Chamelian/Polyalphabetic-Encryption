@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-const int SIZE_OF_ALPHABET = 96;
+#define encode 0
+#define decode 1
+
 const int ALPHABET_COUNT = 5;
 const char alphabet[] = {
     'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
@@ -11,8 +13,18 @@ const char alphabet[] = {
     '0','1','2','3','4','5','6','7','8','9','!','@','#','$','%','^','&','*','(',')','-','_','=','+','[','{',
     ']','}',';',':','\'','"',',','<','.','>','/','?','\\','|','`','~',' ','\n'
 };
+const int SIZE_OF_ALPHABET = sizeof(alphabet);
 
-// I use '\000' instead of NULL since the compiler complains even though I think it's fine
+// Time is kinda shit for randomness and I can't think of a better way to generate the seed.
+// Keyboard mashing the primary key :3 (same for secondary key. Just choose a good number idk)
+const int seed = 1; // Primary Key
+// Determines the order the alphabets are used in. Only supports the value of ALPHABET_COUNT right now
+// I'll probably program it so that it can be of any length. It should be as simple as "sizeof(alphabetOrderKey) - 1"
+// I also could make this essentially a new seed and call srand again before the while loop in _fileEncryption
+// This would randomize the alphabet order, but still be reproducible via a key.
+const char alphabetOrderKey[] = "11111"; // Secondary Key ("12345", "41325", "11111", etc.)
+
+// I frequently use'\000' instead of NULL since the compiler complains even though I think it's fine
 
 
 char* _genRandomAlphabet(const char alphabet[], char returnAlphabet[]) {
@@ -50,11 +62,11 @@ char* _genRandomAlphabet(const char alphabet[], char returnAlphabet[]) {
 }
 
 char* _stringEncoder(char message[]) {
-
+    // Placeholder
 }
 
 char* _stringDecoder(char message[]) {
-
+    // Placeholder
 }
 
 FILE* __initFile(char filePath[], char* mode) {
@@ -67,68 +79,43 @@ FILE* __initFile(char filePath[], char* mode) {
     return file;
 }
 
-void _fileEncoder(
-    char readFilePath[],
-    char writeFilePath[],
-    const char alphabet[],
-    char lemon[][SIZE_OF_ALPHABET],
-    char alphabetOrderKey[]
-) {
-    FILE* fileToEncode = __initFile(readFilePath, "r");
-    FILE* outputFile = __initFile(writeFilePath, "w");
-
-    int currentAlphabet = 0;
-
-    while (true) {
-        char character = (char) fgetc(fileToEncode);
-        if (character == EOF || character == '\000') {
-            break;
-        }
-
-        for (int i = 0; i < SIZE_OF_ALPHABET; i++) {
-            if (character == alphabet[i]) {
-                // This is kinda convoluted. Casting char to int returns the ascii code rather than the
-                // actual value in the string, so I have to subtract 48 (The ascii code of '0') in order
-                // to get the correct value.
-                fprintf(outputFile, "%c", lemon[((int)alphabetOrderKey[currentAlphabet]-(int)'0')-1][i]);
-                break;
-            }
-        }
-
-        if (currentAlphabet >= ALPHABET_COUNT - 1) {
-            currentAlphabet -= ALPHABET_COUNT - 1;
-        } else {
-            currentAlphabet += 1;
+void __fileDecode(char character, char lemon[][SIZE_OF_ALPHABET], char alphabetOrderKey[], int currentAlphabet, FILE* outputFile) {
+    for (int i = 0; i < SIZE_OF_ALPHABET; i++) {
+        // This is kinda convoluted. Casting char to int returns the ascii code rather than the
+        // actual value in the string, so I have to subtract 48 (The ascii code of '0') in order
+        // to get the correct value.
+        if (character == lemon[((int)alphabetOrderKey[currentAlphabet]-(int)'0')-1][i]) {
+            fprintf(outputFile, "%c", alphabet[i]);
+            return;
         }
     }
-
-    fclose(fileToEncode);
-    fclose(outputFile);
 }
 
-void _fileDecoder(
-    char readFilePath[],
-    char writeFilePath[],
-    const char alphabet[],
-    char lemon[][SIZE_OF_ALPHABET],
-    char alphabetOrderKey[]
-) {
-    FILE* fileToDecode = __initFile(readFilePath, "r");
+void __fileEncode(char character, char lemon[][SIZE_OF_ALPHABET], char alphabetOrderKey[], int currentAlphabet, FILE* outputFile) {
+    for (int i = 0; i < SIZE_OF_ALPHABET; i++) {
+        if (character == alphabet[i]) {
+            fprintf(outputFile, "%c", lemon[((int)alphabetOrderKey[currentAlphabet]-(int)'0')-1][i]);
+            return;
+        }
+    }
+}
+
+void _fileEncryption(char readFilePath[], char writeFilePath[], const char alphabet[], char lemon[][SIZE_OF_ALPHABET], char alphabetOrderKey[], int encryptionPath) {
+    FILE* inputFile = __initFile(readFilePath, "r");
     FILE* outputFile = __initFile(writeFilePath, "w");
 
     int currentAlphabet = 0;
 
     while (true) {
-        char character = (char) fgetc(fileToDecode);
+        char character = (char) fgetc(inputFile);
         if (character == EOF || character == '\000') {
             break;
         }
 
-        for (int i = 0; i < SIZE_OF_ALPHABET; i++) {
-            if (character == lemon[((int)alphabetOrderKey[currentAlphabet]-(int)'0')-1][i]) {
-                fprintf(outputFile, "%c", alphabet[i]);
-                break;
-            }
+        if (encryptionPath) {
+            __fileDecode(character, lemon, alphabetOrderKey, currentAlphabet, outputFile);
+        } else {
+            __fileEncode(character, lemon, alphabetOrderKey, currentAlphabet, outputFile);
         }
 
         if (currentAlphabet >= ALPHABET_COUNT - 1) {
@@ -138,7 +125,7 @@ void _fileDecoder(
         }
     }
 
-    fclose(fileToDecode);
+    fclose(inputFile);
     fclose(outputFile);
 }
 
@@ -146,12 +133,7 @@ void _fileDecoder(
 
 
 void main() {
-    // Time is kinda shit for randomness and I can't think of a better way to generate the seed.
-    // Keyboard mashing the primary key :3 (same for secondary key. Just choose a good number idk)
-    int seed = 1; // Primary Key
-    // Determines the order the alphabets are used in. Only supports the value of ALPHABET_COUNT right now
-    // I'll probably program it so that it can be of any length. It should be as simple as "sizeof(alphabetOrderKey) - 1"
-    char alphabetOrderKey[] = "11111"; // Secondary Key ("12345", "41325", "11111", etc.)
+
     printf("Seed (Primary Key): %d\n", seed);
     srand(seed);
 
