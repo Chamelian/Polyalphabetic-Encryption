@@ -3,9 +3,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define encode 0
-#define decode 1
-
 const int ALPHABET_COUNT = 5;
 const char alphabet[] = {
     'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
@@ -132,7 +129,7 @@ void _fileEncryption(char readFilePath[], char writeFilePath[], const char alpha
 
 
 
-void main() {
+int main(int argc, char *argv[]) {
 
     printf("Seed (Primary Key): %d\n", seed);
     srand(seed);
@@ -162,4 +159,6 @@ void main() {
     //     lemon,
     //     alphabetOrderKey
     // );
+
+    return 0;
 }
